@@ -1,0 +1,46 @@
+name: Build and Publish FrankenWP
+
+# Isso faz com que a ação rode automaticamente toda vez que der "push" na branch main
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Permite rodar manualmente pelo painel do GitHub
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    
+    # Dá permissão para o bot do GitHub subir a imagem no seu registro
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # Esse token é gerado automaticamente pelo próprio GitHub, você não precisa criar nada
+          password: ${{ secrets.GITHUB_TOKEN }} 
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
