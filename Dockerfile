@@ -34,3 +34,10 @@ RUN cp /var/www/html/wp-content/mu-plugins/sqlite-database-integration/db.copy /
 RUN chown -R www-www-data /var/www/html/wp-content
 
 USER www-data
+
+# Copia o php.ini para a pasta onde o FrankenPHP espera encontrá-lo
+COPY custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
+
+# Ignora cache no painel de admin, nos arquivos principais, e no WebDAV
+ENV BYPASS_PATH_PREFIX="/wp-admin,/wp-includes,/wp-json,/webdav"
+ENV CACHE_LOC="/var/www/html/wp-content/cache"
