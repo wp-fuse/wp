@@ -13,7 +13,7 @@ RUN xcaddy build \
     --with github.com/mholt/caddy-webdav
 
 # 2. Imagem Final (baseada no FrankenWP do StephenMiracle)
-FROM stephenmiracle/frankenwp:latest-php8.3
+FROM wpeverywhere/frankenwp:latest-php8.3
 
 # Substitui o binário original pelo nosso compilado com WebDAV
 COPY --from=builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
