@@ -1,5 +1,5 @@
 # 1. Compilação do FrankenPHP com Módulos Extras
-FROM dunglas/frankenphp:latest-builder-php8.3 as builder
+FROM dunglas/frankenphp:latest-builder-php8.3 AS builder
 
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 ENV CGO_ENABLED=1 XCADDY_SETCAP=1 XCADDY_GO_BUILD_FLAGS='-ldflags="-w -s" -trimpath'
@@ -31,9 +31,29 @@ RUN cp /var/www/html/wp-content/mu-plugins/sqlite-database-integration/db.copy /
     sed -i 's/{SQLITE_IMPLEMENTATION_FOLDER_PATH}/\/var\/www\/html\/wp-content\/mu-plugins\/sqlite-database-integration/g' /var/www/html/wp-content/db.php && \
     sed -i 's/{SQLITE_PLUGIN}/WP_PLUGIN_DIR\/SQLITE_MAIN_FILE/g' /var/www/html/wp-content/db.php
 
-# Copia o php.ini customizado e a regra do WebDAV (Garantindo que estamos como root)
-COPY custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
-COPY webdav.caddy /etc/caddy/webdav.caddy
+# Cria o arquivo php.ini via echo direto no ambiente do contêiner
+RUN printf "upload_max_filesize = 500M\n\
+post_max_size = 500M\n\
+memory_limit = 512M\n\
+max_execution_time = 300\n\
+max_input_time = 300\n\
+opcache.enable = 1\n\
+opcache.memory_consumption = 256\n\
+opcache.interned_strings_buffer = 16\n\
+opcache.max_accelerated_files = 10000\n\
+opcache.revalidate_freq = 60\n\
+opcache.save_comments = 1" > /usr/local/etc/php/conf.d/custom-php.ini
+
+# Cria o arquivo do WebDAV via echo (com a senha de teste)
+RUN printf "route /webdav/* {\n\
+    basic_auth {\n\
+        daniel \$2a\$14\$JDJhJDE0JElab2ZPM25zdXpG\n\
+    }\n\
+    webdav {\n\
+        root /var/www/html/wp-content\n\
+        prefix /webdav\n\
+    }\n\
+}" > /etc/caddy/webdav.caddy
 
 # Manda o Caddy ler as regras do WebDAV
 ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
