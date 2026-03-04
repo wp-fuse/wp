@@ -1,0 +1,9 @@
+route /webdav/* {
+    basic_auth {
+        daniel $2a$14$JDJhJDE0JElab2ZPM25zdXpG
+    }
+    webdav {
+        root /var/www/html/wp-content
+        prefix /webdav
+    }
+}
