@@ -32,8 +32,8 @@ RUN cp /var/www/html/wp-content/mu-plugins/sqlite-database-integration/db.copy /
     sed -i 's/{SQLITE_PLUGIN}/WP_PLUGIN_DIR\/SQLITE_MAIN_FILE/g' /var/www/html/wp-content/db.php
 
 # Copia o php.ini customizado e a regra do WebDAV (Garantindo que estamos como root)
-COPY ./custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
-COPY ./webdav.caddy /etc/caddy/webdav.caddy
+COPY custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
+COPY webdav.caddy /etc/caddy/webdav.caddy
 
 # Manda o Caddy ler as regras do WebDAV
 ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
