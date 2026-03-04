@@ -9,7 +9,8 @@ RUN xcaddy build \
     --with github.com/dunglas/frankenphp=./ \
     --with github.com/dunglas/frankenphp/caddy=./caddy/ \
     --with github.com/dunglas/caddy-cbrotli \
-    --with github.com/mholt/caddy-webdav # <--- Módulo WebDAV adicionado
+    --with github.com/stephenmiracle/frankenwp/sidekick/middleware/cache \
+    --with github.com/mholt/caddy-webdav
 
 # 2. Imagem Final (baseada no FrankenWP do StephenMiracle)
 FROM stephenmiracle/frankenwp:latest-php8.3
@@ -17,7 +18,7 @@ FROM stephenmiracle/frankenwp:latest-php8.3
 # Substitui o binário original pelo nosso compilado com WebDAV
 COPY --from=builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
-# Instala ferramentas do SQLite 
+# Instala ferramentas do SQLite (Como root)
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends sqlite3 libsqlite3-dev wget unzip
 
@@ -30,21 +31,20 @@ RUN cp /var/www/html/wp-content/mu-plugins/sqlite-database-integration/db.copy /
     sed -i 's/{SQLITE_IMPLEMENTATION_FOLDER_PATH}/\/var\/www\/html\/wp-content\/mu-plugins\/sqlite-database-integration/g' /var/www/html/wp-content/db.php && \
     sed -i 's/{SQLITE_PLUGIN}/WP_PLUGIN_DIR\/SQLITE_MAIN_FILE/g' /var/www/html/wp-content/db.php
 
-# Garante que o Caddy consiga ler e escrever os arquivos
-RUN chown -R www-www-data /var/www/html/wp-content
-
-USER www-data
-
-# Copia o php.ini para a pasta onde o FrankenPHP espera encontrá-lo
+# Copia o php.ini customizado e a regra do WebDAV (Garantindo que estamos como root)
 COPY custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
+COPY webdav.caddy /etc/caddy/webdav.caddy
+
+# Manda o Caddy ler as regras do WebDAV
+ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
 
 # Ignora cache no painel de admin, nos arquivos principais, e no WebDAV
 ENV BYPASS_PATH_PREFIX="/wp-admin,/wp-includes,/wp-json,/webdav"
 ENV CACHE_LOC="/var/www/html/wp-content/cache"
 
-# Copia arquivo para dentro do contêiner
-COPY webdav.caddy /etc/caddy/webdav.caddy
+# Garante que as pastas que precisam de gravação do site tenham as permissões corretas
+RUN mkdir -p /var/www/html/wp-content/cache && \
+    chown -R www-www-data /var/www/html/wp-content
 
-# Manda a variável ler o arquivo
-ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
-
+# Passa o controle para o usuário seguro do servidor final
+USER www-data
