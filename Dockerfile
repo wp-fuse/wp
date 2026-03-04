@@ -42,14 +42,9 @@ COPY custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
 ENV BYPASS_PATH_PREFIX="/wp-admin,/wp-includes,/wp-json,/webdav"
 ENV CACHE_LOC="/var/www/html/wp-content/cache"
 
-# Injeta a regra do WebDAV diretamente nas configurações do FrankenPHP
-ENV CADDY_SERVER_EXTRA_DIRECTIVES="route /webdav/* {\n\
-    basic_auth {\n\
-        daniel \$2a\$14\$JDJhJDE0JElab2ZPM25zdXpG\n\
-    }\n\
-    webdav {\n\
-        root /var/www/html/wp-content\n\
-        prefix /webdav\n\
-    }\n\
-}"
+# Copia arquivo para dentro do contêiner
+COPY webdav.caddy /etc/caddy/webdav.caddy
+
+# Manda a variável ler o arquivo
+ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
 
