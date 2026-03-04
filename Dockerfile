@@ -1,5 +1,5 @@
 # ==========================================
-# STAGE 1: Compilar FrankenPHP + WebDAV
+# STAGE 1: Compilar FrankenPHP + WebDAV + Brotli
 # ==========================================
 FROM dunglas/frankenphp:1.11.3-builder-php8.4 AS builder
 
@@ -14,6 +14,7 @@ RUN export CGO_CFLAGS=$(php-config --includes) && \
     --output /usr/local/bin/frankenphp \
     --with github.com/dunglas/frankenphp=./ \
     --with github.com/dunglas/frankenphp/caddy=./caddy/ \
+    --with github.com/dunglas/caddy-cbrotli \
     --with github.com/mholt/caddy-webdav
 
 # ==========================================
