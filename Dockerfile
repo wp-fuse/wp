@@ -1,15 +1,26 @@
 # 1. Compilação do FrankenPHP com Módulos Extras
 FROM dunglas/frankenphp:latest-builder-php8.3 AS builder
 
+# Instala o git para podermos baixar o módulo de cache original
+RUN apt-get update && apt-get install -y git
+
+# Copia a ferramenta xcaddy
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
+
+# Variáveis do FrankenPHP
 ENV CGO_ENABLED=1 XCADDY_SETCAP=1 XCADDY_GO_BUILD_FLAGS='-ldflags="-w -s" -trimpath'
 
+# Clona o repositório do FrankenWP original e extrai apenas a pasta do Sidekick Cache
+RUN git clone https://github.com/StephenMiracle/frankenwp.git /tmp/frankenwp && \
+    cp -r /tmp/frankenwp/sidekick/middleware/cache ./cache
+
+# Compila o binário com o Cache e o WebDAV
 RUN xcaddy build \
     --output /usr/local/bin/frankenphp \
     --with github.com/dunglas/frankenphp=./ \
     --with github.com/dunglas/frankenphp/caddy=./caddy/ \
     --with github.com/dunglas/caddy-cbrotli \
-    --with github.com/stephenmiracle/frankenwp/sidekick/middleware/cache \
+    --with github.com/stephenmiracle/frankenwp/sidekick/middleware/cache=./cache \
     --with github.com/mholt/caddy-webdav
 
 # 2. Imagem Final (baseada no FrankenWP do StephenMiracle)
