@@ -8,7 +8,7 @@ if [ ! -d /data/wp-content ]; then
 fi
 
 # Copia o php.ini customizado para o disco se ele não existir
-if [ ! -f /data/server/custom-php.ini ]; then
+if [ ! -f /data/server/php.ini ]; then
     echo 'Criando php.ini editavel no disco...'
     cp /usr/local/etc/php/conf.d/php.ini.base /data/server/php.ini
 fi
