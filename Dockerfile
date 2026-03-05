@@ -1,5 +1,5 @@
 # ==========================================
-# STAGE 1: Compilar FrankenPHP + WebDAV + Brotli
+# STAGE 1: Compilar FrankenPHP + WebDAV
 # ==========================================
 FROM dunglas/frankenphp:1.11.3-builder-php8.4 AS builder
 
@@ -14,7 +14,6 @@ RUN export CGO_CFLAGS=$(php-config --includes) && \
     --output /usr/local/bin/frankenphp \
     --with github.com/dunglas/frankenphp=./ \
     --with github.com/dunglas/frankenphp/caddy=./caddy/ \
-    --with github.com/dunglas/caddy-cbrotli \
     --with github.com/mholt/caddy-webdav
 
 # ==========================================
@@ -22,10 +21,8 @@ RUN export CGO_CFLAGS=$(php-config --includes) && \
 # ==========================================
 FROM dunglas/frankenphp:1.11.3-php8.4
 
-# Instala as extensões essenciais para WordPress no Debian Bookworm
+# Instala SOMENTE as extensões PHP essenciais (sem o MySQL)
 RUN install-php-extensions \
-    mysqli \
-    pdo_mysql \
     gd \
     intl \
     zip \
@@ -33,7 +30,7 @@ RUN install-php-extensions \
     exif \
     bcmath
 
-# Instala dependências do SO
+# Instala SQLite e utilitários
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sqlite3 libsqlite3-dev wget unzip sudo less && \
     rm -rf /var/lib/apt/lists/*
@@ -68,10 +65,10 @@ opcache.max_accelerated_files = 10000\n\
 opcache.revalidate_freq = 60\n\
 opcache.save_comments = 1" > /usr/local/etc/php/conf.d/custom-php.ini
 
-# Cria WebDAV Caddyfile
+# Cria o WebDAV Caddyfile usando Variáveis de Ambiente dinâmicas!
 RUN printf "route /webdav/* {\n\
     basic_auth {\n\
-        daniel \$2a\$14\$JDJhJDE0JElab2ZPM25zdXpG\n\
+        {\$WEBDAV_USER} {\$WEBDAV_HASH}\n\
     }\n\
     webdav {\n\
         root /app/public/wp-content\n\
@@ -79,8 +76,14 @@ RUN printf "route /webdav/* {\n\
     }\n\
 }" > /etc/caddy/webdav.caddy
 
+# Configura o Servidor Caddy (Zstd pra evitar o bug do loop e Variáveis padrão)
 ENV SERVER_NAME=":80"
+ENV FRANKENPHP_CONFIG="encode zstd gzip"
 ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
+
+# Fallback das variáveis: Se você não colocar nada no Bunny.net, ele usa a sua original
+ENV WEBDAV_USER="wpfuse"
+ENV WEBDAV_HASH="\$2a\$14\$JDJhJDE0JElab2ZPM25zdXpG"
 
 RUN chown -R root:root /app/public /etc/caddy/webdav.caddy && \
     chmod -R 777 /app/public
