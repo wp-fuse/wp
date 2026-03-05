@@ -60,7 +60,7 @@ RUN wget https://downloads.wordpress.org/plugin/sqlite-database-integration.zip 
 # ==========================================
 
 # Copia configurações
-COPY custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
+COPY php.ini /usr/local/etc/php/conf.d/php.ini.base
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY webdav.caddy /etc/caddy/snippets/webdav.caddy
 COPY start.sh /usr/local/bin/start.sh
@@ -69,6 +69,9 @@ COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh && \
     chown -R root:root /app/public /data /etc/caddy && \
     chmod -R 777 /app/public
+
+# Avisa o motor do PHP para ler configurações DEPOIS do boot no disco persistente
+ENV PHP_INI_SCAN_DIR=":/data/server/"
 
 # Fallback para o nome do arquivo Caddy
 ENV CADDYFILE_NAME="Caddyfile"
