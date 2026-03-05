@@ -37,15 +37,7 @@ RUN wget https://wordpress.org/latest.zip -O /tmp/wp.zip && \
     unzip /tmp/wp.zip -d /tmp/ && \
     cp -r /tmp/wordpress/* /app/public/ && \
     rm -rf /tmp/wp.zip /tmp/wordpress && \
-    cp /app/public/wp-config-sample.php /app/public/wp-config.php && \
-    sed -i "/That's all, stop editing!/i \
-// Forçar HTTPS caso esteja atrás do Reverse Proxy da Bunny.net\n\
-if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {\n\
-    \$_SERVER['HTTPS'] = 'on';\n\
-}\n\
-// Direciona wp-content para o volume persistente\n\
-define( 'WP_CONTENT_DIR', '/data/wp-content' );\n\
-define( 'WP_CONTENT_URL', 'https://' . \$_SERVER['HTTP_HOST'] . '/wp-content' );\n" /app/public/wp-config.php
+    cp /app/public/wp-config-sample.php /app/public/wp-config.php
 
 # Instala o Database Integration do SQLite
 RUN wget https://downloads.wordpress.org/plugin/sqlite-database-integration.zip -O /tmp/sqlite.zip && \
