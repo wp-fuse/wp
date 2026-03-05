@@ -13,27 +13,24 @@ if [ ! -f /data/server/php.ini ]; then
     cp /usr/local/etc/php/conf.d/php.ini.base /data/server/php.ini
 fi
 
-# Move o wp-config.php para o disco persistente de forma segura
+# 2) Move o wp-config.php para o disco persistente
 if [ ! -f /data/server/wp-config.php ]; then
     echo 'Movendo wp-config.php para a pasta de configuracoes...'
-    cp /app/public/wp-config.base.php /data/server/wp-config.php
+    cp /app/public/wp-config.php /data/server/wp-config.php
 fi
 
 # Deleta o arquivo base da imagem e cria o Symlink para o arquivo real
-rm -f /app/public/wp-config.base.php
 rm -f /app/public/wp-config.php
 ln -s /data/server/wp-config.php /app/public/wp-config.php
 
-# Define qual nome o Caddy vai usar para buscar as configurações
+# 3) Processa a infraestrutura do Caddy
 ARQUIVO_CADDY=${CADDYFILE_NAME:-Caddyfile}
 CADDY_DEST="/data/server/$ARQUIVO_CADDY"
 
-# 2) Sempre constrói um Caddyfile fresco a partir da imagem
 cat /etc/caddy/Caddyfile > "$CADDY_DEST"
-# Injeta as regras do WebDAV fisicamente dentro do arquivo final 
 sed -i -e '/import \/etc\/caddy\/snippets\/webdav.caddy/r /etc/caddy/snippets/webdav.caddy' -e '/import \/etc\/caddy\/snippets\/webdav.caddy/d' "$CADDY_DEST"
 
-# 3) Processa a Autenticação
+# 4) Processa a Autenticacao
 if [ -n "$WEBDAV_USER" ] && [ -n "$WEBDAV_HASH" ]; then
     echo "Injetando credenciais do WebDAV a partir das variáveis de ambiente"
     sed -i "s|placeholder_user|$WEBDAV_USER|g" "$CADDY_DEST"
@@ -51,5 +48,5 @@ else
     sed -i "s|placeholder_hash|$RANDOM_HASH|g" "$CADDY_DEST"
 fi
 
-# 4) Executa o servidor
+# 5) Executa o servidor
 exec frankenphp run --config "$CADDY_DEST"
