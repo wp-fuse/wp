@@ -83,7 +83,7 @@ RUN printf "{\n\
     \n\
     route /webdav/* {\n\
         basic_auth {\n\
-            {\$WEBDAV_USER} {\$WEBDAV_HASH}\n\
+            {\$WEBDAV_USER} \"{\$WEBDAV_HASH}\"\n\
         }\n\
         webdav {\n\
             root /data\n\
