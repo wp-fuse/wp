@@ -36,8 +36,9 @@ COPY --from=builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 RUN wget https://wordpress.org/latest.zip -O /tmp/wp.zip && \
     unzip /tmp/wp.zip -d /tmp/ && \
     cp -r /tmp/wordpress/* /app/public/ && \
-    rm -rf /tmp/wp.zip /tmp/wordpress && \
-    cp /app/public/wp-config-sample.php /app/public/wp-config.php
+    rm -rf /tmp/wp.zip /tmp/wordpress
+    
+COPY wp-config.php /app/public/wp-config.php
 
 # Instala o Database Integration do SQLite
 RUN wget https://downloads.wordpress.org/plugin/sqlite-database-integration.zip -O /tmp/sqlite.zip && \
