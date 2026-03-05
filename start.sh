@@ -7,6 +7,12 @@ if [ ! -d /data/wp-content ]; then
     cp -a /app/public/wp-content /data/
 fi
 
+# Copia o php.ini customizado para o disco se ele não existir
+if [ ! -f /data/server/custom-php.ini ]; then
+    echo 'Criando php.ini editavel no disco...'
+    cp /usr/local/etc/php/conf.d/php.ini.base /data/server/php.ini
+fi
+
 # Define qual nome o Caddy vai usar para buscar as configurações
 ARQUIVO_CADDY=${CADDYFILE_NAME:-Caddyfile}
 CADDY_DEST="/data/server/$ARQUIVO_CADDY"
