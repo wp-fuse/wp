@@ -10,7 +10,17 @@ define( 'DB_COLLATE', '' );
 REPLACE_WP_SALTS_HERE
 
 $table_prefix = 'wp_';
-define( 'WP_DEBUG', false );
+
+if ( ! defined( 'WP_DEBUG' ) ) {
+	define( 'WP_DEBUG', false );
+}
+define( 'WP_DEBUG_DISPLAY', false );
+define( 'WP_DEBUG_LOG', false );
+define( 'DISALLOW_FILE_EDIT', true );
+
+define( 'EMPTY_TRASH_DAYS', 7 );
+define( 'WP_POST_REVISIONS', false );
+define( 'AUTOSAVE_INTERVAL', 99999 );
 
 // Forca HTTPS no Reverse Proxy
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
