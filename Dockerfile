@@ -52,40 +52,53 @@ RUN wget https://downloads.wordpress.org/plugin/sqlite-database-integration.zip 
     sed -i 's/{SQLITE_IMPLEMENTATION_FOLDER_PATH}/\/app\/public\/wp-content\/mu-plugins\/sqlite-database-integration/g' /app/public/wp-content/db.php && \
     sed -i 's/{SQLITE_PLUGIN}/WP_PLUGIN_DIR\/SQLITE_MAIN_FILE/g' /app/public/wp-content/db.php
 
-# Cria custom.ini
-RUN printf "upload_max_filesize = 500M\n\
-post_max_size = 500M\n\
-memory_limit = 512M\n\
-max_execution_time = 300\n\
-max_input_time = 300\n\
-opcache.enable = 1\n\
-opcache.memory_consumption = 256\n\
-opcache.interned_strings_buffer = 16\n\
-opcache.max_accelerated_files = 10000\n\
-opcache.revalidate_freq = 60\n\
-opcache.save_comments = 1" > /usr/local/etc/php/conf.d/custom-php.ini
-
-# Cria o WebDAV Caddyfile usando Variáveis de Ambiente dinâmicas!
-RUN printf "route /webdav/* {\n\
-    basic_auth {\n\
-        {\$WEBDAV_USER} {\$WEBDAV_HASH}\n\
+# Cria um Caddyfile Padrão (Fica salvo no sistema apenas como backup/molde)
+RUN printf "{\n\
+    frankenphp\n\
+    order php_server before file_server\n\
+}\n\
+:80 {\n\
+    root * /app/public\n\
+    encode zstd gzip\n\
+    \n\
+    route /webdav/* {\n\
+        basic_auth {\n\
+            {\$WEBDAV_USER} {\$WEBDAV_HASH}\n\
+        }\n\
+        webdav {\n\
+            root /app/public/wp-content\n\
+            prefix /webdav\n\
+        }\n\
     }\n\
-    webdav {\n\
-        root /app/public/wp-content\n\
-        prefix /webdav\n\
-    }\n\
-}" > /etc/caddy/webdav.caddy
+    \n\
+    php_server\n\
+    file_server\n\
+}" > /etc/caddy/Caddyfile.default
 
-# Configura o Servidor Caddy (Zstd pra evitar o bug do loop e Variáveis padrão)
-ENV SERVER_NAME=":80"
-ENV FRANKENPHP_CONFIG="encode zstd gzip"
-ENV CADDY_SERVER_EXTRA_DIRECTIVES="import /etc/caddy/webdav.caddy"
+# Script de Inicialização (1 Único Volume)
+RUN printf "#!/bin/sh\n\
+# A pasta wp-content já será persistente, criamos a subpasta config nela\n\
+mkdir -p /app/public/wp-content/caddy\n\
+\n\
+ARQUIVO_CADDY=\${CADDYFILE_NAME:-Caddyfile}\n\
+\n\
+if [ ! -f /app/public/wp-content/caddy/\$ARQUIVO_CADDY ]; then\n\
+    echo 'Criando \$ARQUIVO_CADDY no disco persistente wp-content...'\n\
+    cp /etc/caddy/Caddyfile.default /app/public/wp-content/caddy/\$ARQUIVO_CADDY\n\
+fi\n\
+\n\
+# Inicia lendo dentro do único volume do wp-content\n\
+exec frankenphp run --config /app/public/wp-content/caddy/\$ARQUIVO_CADDY\n\
+" > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
-# Fallback das variáveis: Se você não colocar nada no Bunny.net, ele usa a sua original
-ENV WEBDAV_USER="wpfuse"
+# Variáveis padrão de Fallback
+ENV WEBDAV_USER="daniel"
 ENV WEBDAV_HASH="\$2a\$14\$JDJhJDE0JElab2ZPM25zdXpG"
+ENV CADDYFILE_NAME="Caddyfile"
 
-RUN chown -R root:root /app/public /etc/caddy/webdav.caddy && \
+RUN chown -R root:root /app/public && \
     chmod -R 777 /app/public
+
+CMD ["/usr/local/bin/start.sh"]
 
 WORKDIR /app/public
