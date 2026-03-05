@@ -17,7 +17,7 @@ fi
 if [ ! -f /data/server/wp-config.php ]; then
     echo 'Construindo o wp-config.php persistente...'
     curl -s https://api.wordpress.org/secret-key/1.1/salt/ > /tmp/salts.txt
-    cp /app/public/wp-config.base.php /data/server/wp-config.php
+    cp /app/public/wp-config.php /data/server/wp-config.php
     sed -i -e '/REPLACE_WP_SALTS_HERE/r /tmp/salts.txt' -e '/REPLACE_WP_SALTS_HERE/d' /data/server/wp-config.php
     rm -f /tmp/salts.txt
 fi
