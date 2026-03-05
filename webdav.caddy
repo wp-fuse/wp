@@ -1,9 +1,9 @@
 route /webdav/* {
     basic_auth {
-        wpfuse $2a$12$GGZkij0Ce8v84B6c4rNbL.kt92JgfgsBl0MJLzY5HpdpnwLEl6XRW
+        placeholder_user pL4CeH0Ld3r-Ha5h-Do-Not-Use
     }
     webdav {
-        root /var/www/html/wp-content
+        root /data
         prefix /webdav
     }
 }
