@@ -1,0 +1,19 @@
+{
+    frankenphp
+    order php_server before file_server
+}
+
+:80 {
+    root * /app/public
+    encode zstd gzip
+    
+    handle_path /wp-content/* {
+        root * /data/wp-content
+        file_server
+    }
+    
+    import /etc/caddy/snippets/webdav.caddy
+    
+    php_server
+    file_server
+}
