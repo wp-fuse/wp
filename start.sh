@@ -13,13 +13,13 @@ if [ ! -f /data/server/php.ini ]; then
     cp /usr/local/etc/php/conf.d/php.ini.base /data/server/php.ini
 fi
 
-# 2) Constrou o wp-config.php
+# 2) Constroi o wp-config.php
 if [ ! -f /data/server/wp-config.php ]; then
     echo 'Construindo o wp-config.php persistente...'
-    cp /app/public/wp-config.php /data/server/wp-config.php
-    SALTS=$(curl -s https://api.wordpress.org/secret-key/1.1/salt/)
-    awk -v salts="$SALTS" '{gsub(/REPLACE_WP_SALTS_HERE/, salts)}1' /data/server/wp-config.php > /tmp/wp.tmp
-    mv /tmp/wp.tmp /data/server/wp-config.php
+    curl -s https://api.wordpress.org/secret-key/1.1/salt/ > /tmp/salts.txt
+    cp /app/public/wp-config.base.php /data/server/wp-config.php
+    sed -i -e '/REPLACE_WP_SALTS_HERE/r /tmp/salts.txt' -e '/REPLACE_WP_SALTS_HERE/d' /data/server/wp-config.php
+    rm -f /tmp/salts.txt
 fi
 
 # Cria o Symlink
