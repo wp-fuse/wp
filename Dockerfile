@@ -38,11 +38,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copia o binário com WebDAV
 COPY --from=builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
-# Instala o WordPress
+# Instala o WordPress e injeta a correção de Proxy (Mixed Content)
 RUN wget https://wordpress.org/latest.zip -O /tmp/wp.zip && \
     unzip /tmp/wp.zip -d /tmp/ && \
     cp -r /tmp/wordpress/* /app/public/ && \
-    rm -rf /tmp/wp.zip /tmp/wordpress
+    rm -rf /tmp/wp.zip /tmp/wordpress && \
+    # Cria o wp-config usando o wp-config-sample como base
+    cp /app/public/wp-config-sample.php /app/public/wp-config.php && \
+    # Injeta a regra do proxy logo antes de "That's all, stop editing!"
+    sed -i "/That's all, stop editing!/i \
+// Forçar HTTPS caso esteja atrás de um Reverse Proxy \n\
+if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {\n\
+    \$_SERVER['HTTPS'] = 'on';\n\
+}\n" /app/public/wp-config.php
+
 
 # Instala o driver do SQLite
 RUN wget https://downloads.wordpress.org/plugin/sqlite-database-integration.zip -O /tmp/sqlite.zip && \
